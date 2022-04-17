@@ -1,0 +1,122 @@
+---
+title: "Project 1"
+subtitle: "MLB Analysis"
+author: "Keagan Benson"
+Student ID: "A15939849"
+output: rmarkdown::github_document
+---
+#Step 1
+In this project, I want to understand how the amount of years in the MLB affects the players salary. I also want to know what years the players make the most money on average and what the distribution of both salary and years are.
+First I decided to create two variables, years and salary which contain all the data from both the salary and years data table. Years will be my independent variable and Salary will be my dependent variable because I want to know how the amount of years affects salary. Both of these variables contain discrete and integer values.
+```{r}
+# Import data
+data <- read.csv("mlb.csv", header=T)
+years <- data$years
+salary <- data$salary
+typeof(years)
+typeof(salary)
+```
+#Step 2
+Next I wanted to do some initial data analysis. First I decided to look at a summary of the data. This allows me to briefly check for outliers as well as none types.
+```{r}
+summary(data)
+```
+
+Based on the summary is looks like there are no none types or outliars but I will use other tests to check for outliars.
+
+Next I decided to plot years against salary to check for outliers, as well as compute the z-score and check for outliers that way.
+```{r}
+plot(years,salary, xlab = "Years", ylab = "Salary")
+```
+```{r}
+mean_years = mean(years)
+mean_salary = mean(salary)
+sd_years = sd(years)
+sd_salary = sd(salary)
+z_score_years = (years - mean_years)/ sd_years
+z_score_salary = (salary - mean_salary)/ sd_salary
+plot(z_score_years, z_score_salary, xlab = "Standardized Years", ylab = "Standardized Salary")
+abline(v=2, col="purple")
+abline(h=2, col="purple")
+```
+After looking at the graph, I believe that the points that are considered outliers by using the z-scores are important for the data set. These points are real salaries and years and should be included in the analysis despite being labeled outliers when they are standardized.
+Due to the fact that I do not want to exclude outliers and there are none types in the data, the data does not need to be cleaned.
+
+#Step 3
+Next I want to look at the distribution of both salaries and years
+```{r}
+hist(years, breaks = max(years))
+abline(v = median(years),col = "red")
+hist(salary, breaks = max(salary)/100000)
+abline(v = median(salary), col = "red")
+```
+I decided to make each year its own bar for the years distribution and every 100,000 dollars its own bar in the Salary histogram. I felt that making every year its own bar is a pretty obvious. I decided to make the salary of the histogram go by 100,000 in order to show how most players make relatively little money compared to the higher earners in the MLB. Both distributions are skewed to the right, this allows me to infer that many players do not end up playing for a long in the MLB and do not end up being millionaires. I found that the median years of experience was 6 and the median salary was $650,000
+
+#Step 4
+Now I want to check the linear regression of the two data frames.
+```{r}
+r = cor(years, salary)
+a = r*sd_salary/sd_years
+b = mean_salary- a*mean_years
+plot(years,salary, xlab = "Years", ylab = "Salary")
+points(mean_years,mean_salary, col = "red", pch = 19, cex = 2)
+abline(b,a, col = "red", lwd = 1)
+abline(h = b, col = "blue")
+legend("topright", c("Regression Line + Center of Data"), col = "red", pch = 19)
+paste("y = ",toString(as.integer(a)),"x + ",toString(as.integer(b)), sep = "")
+r
+```
+I have plotted the linear regression model on top of the data. I do not believe this a good representation of the data because I do not think that this is data should be represented with a linear model. The model is "y = 173428x + 248601" with a correlation of 0.478. This correlation signals that there is some relationship, but there is not much. Most people aim for 0.8. Another reason I believe this model is poor is that there is a significant amount of salaries that are less than the y intercept, which does not make that much sense because with according to the model, a player with zero years of experience should be making more than a lot of players.
+#Step 5
+```{r}
+model <- lm(salary ~ years)
+plot(model$residuals)
+abline(h=0,col = "red")
+```
+I decided to next check the residuals, and they showed that a lot of the data points are under the regression line, but the regression line is brought upwards by large values. This is because the data is right skewed, and there are a lot of outliers that are on the higher end. This allows me to make the assumption that the mean value is higher than the median.
+```{r}
+plot(by(salary/1000000, years, mean), xlab = "Years", ylab = "Mean Pay in Millions")
+```
+Finally I decided to plot the average salary for each amount of years in the MLB. This plot shows a lot. The first thing I took away from this plot is that their was probably a rookie contract that lasted 3 for the first years of a players career and was less than half a million per year. Once the player hits their fourth year, they probably get a new contract which has a raise and makes the average pay about a million. Players on average continue to make more money until their seventh year in which they hit a peak. After the seventh year, players begin to have a less predictable salary given their experience. This gets even more extreme as they get more years of experience as there as less players playing. For example there is only one player with 20 years of experience, one with 19 years and zero with 18 years.
+```{r}
+first_seven = data[data$years<8,]
+
+first_seven_years <- first_seven$years
+first_seven_salary <- first_seven$salary
+
+first_seven_years_mean <- mean(first_seven_years)
+first_seven_salary_mean <- mean(first_seven_salary)
+first_seven_years_sd <- sd(first_seven_years)
+first_seven_salary_sd <- sd(first_seven_salary)
+
+first_seven_r = cor(first_seven_years, first_seven_salary)
+first_seven_m = first_seven_r* first_seven_salary_sd / first_seven_years_sd
+first_seven_b = first_seven_salary_mean - first_seven_m * first_seven_years_mean
+plot(first_seven_years,first_seven_salary, xlab = "Years", ylab = "Salary")
+abline(first_seven_b,first_seven_m, col = "red", lwd = 1)
+paste("y = ",toString(as.integer(first_seven_m)),"x + ",toString(as.integer(first_seven_b)), sep = "")
+first_seven_r
+
+```
+```{r}
+last_seven = data[data$years>7,]
+
+last_seven_years <- last_seven$years
+last_seven_salary <- last_seven$salary
+
+last_seven_years_mean <- mean(last_seven_years)
+last_seven_salary_mean <- mean(last_seven_salary)
+last_seven_years_sd <- sd(last_seven_years)
+last_seven_salary_sd <- sd(last_seven_salary)
+
+last_seven_r = cor(last_seven_years, last_seven_salary)
+last_seven_m = last_seven_r* last_seven_salary_sd / last_seven_years_sd
+last_seven_b = last_seven_salary_mean - last_seven_m * last_seven_years_mean
+plot(last_seven_years,last_seven_salary, xlab = "Years", ylab = "Salary")
+abline(last_seven_b,last_seven_m, col = "red", lwd = 1)
+paste("y = ",toString(as.integer(last_seven_m)),"x + ",toString(as.integer(last_seven_b)), sep = "")
+last_seven_r
+
+```
+#Step 6
+Finally I decided to break the data in to 2 different sets based on what I learned by looking at the average salary at every year. So I created one data set where the players had less than 8 years of experience and one with more than 7 years of experience. This allowed me to learn that their is nearly no relationship between a players experience and their salary after their seventh year, but there is a pretty strong relationship between their salary and their experience in their first seven years. This makes since as players should be getting paid more as they get more experience, yet once they hit a certain age some players begin to get worse while some players continue to get better or stay the same. The correlation also should get weaker because their is less data as the years of experience increase. I think that the correlation of almost 0.6 is pretty good considering I am only using linear regression. It is really hard to predict salary given experience because there are so many more variables that result in salary than just experience. I think it is very interesting that experience can be used as a predictor when the player has relatively little experience but as the player plays longer, it is harder to predict.
